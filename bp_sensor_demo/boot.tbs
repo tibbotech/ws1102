@@ -1,0 +1,149 @@
+include "global.tbh"
+
+sub boot()
+	
+    'Modbus Setup
+    '==================================
+    modbus_initialize()
+	
+	
+    if wln.enabled=NO then
+        wln.boot(0)
+    end if
+    
+    'Bluetooth setup
+    '================================================================
+    bt.name=BT_NAME
+    bt.emulation=PL_WLN_BT_EMULATION_MODE_MICROCHIP
+    bt.txbuffrq(1)
+    bt.rxbuffrq(1)
+    sys.buffalloc()
+    bt.enable
+    while bt.enabled=NO
+    wend
+    bt.advertise=YES 'allow the device to be discoverable
+
+    'Setting Library Initialization
+    '================================================================
+    dim stg_init_code as en_stg_status_codes
+    dim stg_name as string(STG_MAX_SETTING_NAME_LEN)
+	
+    if stg_start()<>EN_STG_STATUS_OK then 
+        pat.play("R-R-~",PL_PAT_CANINT)
+        sys.halt
+    end if
+	
+    stg_init_code=stg_check_all(stg_name)
+    select case stg_init_code
+	
+    case EN_STG_STATUS_OK:
+    '--- all good ---
+    case EN_STG_STATUS_INVALID, EN_STG_STATUS_FAILURE:
+        if stg_restore_multiple(EN_STG_INIT_MODE_NORMAL)<>EN_STG_STATUS_OK then 
+            pat.play("R-R-~",PL_PAT_CANINT)
+            sys.halt
+        end if
+    case else:
+        'some other trouble
+        pat.play("R-R-~",PL_PAT_CANINT)
+        sys.halt
+    end select
+    '-----------------------------------------------------------------
+
+    'WM2000 Wi-Fi setup
+    '================================================================
+	
+	dim ssid as string=stg_get("SSID",0)
+	dim pwd as string=stg_get("KEY",0)
+
+	if ssid="" then
+		wln.autoconnect=NO
+	else
+		if ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd then
+			wln.autoconnect=YES
+			wln.autoconnectssid=ssid
+			wln.autoconnectpassword=pwd	
+			wln.autodhcp=YES
+			wln.autoconnect=YES
+			sys.reboot
+		end if	
+	end if
+	
+    'serial port setup for port 0
+    ser.num=peripheral3_PORT_NUM
+    ser.enabled=NO
+
+    init_io_expander()
+
+    tbt41_line_set(SER0_HDFD, LOW, S1_CHANNEL)
+    tbt41_line_out_enable(SER0_HDFD, YES, S1_CHANNEL)
+    
+    tbt41_line_set(SER0_RSMD, HIGH, S1_CHANNEL)
+    tbt41_line_out_enable(SER0_RSMD, YES, S1_CHANNEL)
+    ser.interface=PL_SER_SI_HALFDUPLEX
+
+    ser.parity=PL_SER_PR_NONE
+    ser.bits=PL_SER_BB_8
+	
+	io.num=PL_IO_NUM_3_RTS_INT1
+	io.enabled=YES
+	io.state=LOW
+	ser.rtsmap=io.num
+	
+    ser.baudrate=PL_SER_BAUD_38400'38400 baud
+    ser.esctype=PL_SER_ET_DISABLED
+    ser.interchardelay=0
+    ser.txbuffrq(1)
+    ser.rxbuffrq(1)
+    sys.buffalloc()
+    ser.enabled=YES
+
+
+
+    luis_start(BT_NAME)
+	
+    'Tables setup
+    '================================================================	
+    if fd.mount<>PL_FD_STATUS_OK or fd.numservicesectors<100 then
+		if fd.formatj(fd.availableflashspace,32,100)<>PL_FD_STATUS_OK then
+			sys.halt
+		end if
+
+		if fd.mount<>PL_FD_STATUS_OK then
+			sys.halt
+		end if
+	end if
+	
+	fd.filenum=0
+	if  fd.open(FD_INIT_FILE)<>PL_FD_STATUS_OK then
+		if fd.create(FD_INIT_FILE) <> PL_FD_STATUS_OK then 
+			sys.halt
+		end if
+		fd.open(FD_INIT_FILE)
+		fd.setdata(sys.serialnum)
+		fd.close()
+ 	end if
+
+	if fd.open(FD_INIT_FILE)<>PL_FD_STATUS_OK then
+		sys.halt
+	end if
+	
+	if fd.getdata(128) <> sys.serialnum then 
+		sys.halt
+	end if
+	
+	fd.close()
+	
+    if tbl_start()<>EN_TBL_STATUS_OK then
+        sys.halt
+    end if
+	
+    pat.play("B-B-B-",PL_PAT_CANINT)
+	
+	dim device_primary_key as string=stg_get("PKEY",0)
+	dim scope_id as string=stg_get("SCID",0)
+	dim device_id as string=stg_get("DVID",0)
+	dim dps_server as string=stg_get("DPSS",0)
+	
+	iothub_start(device_id, scope_id, dps_server, device_primary_key, PL_SOCK_INTERFACE_WLN)	
+end sub

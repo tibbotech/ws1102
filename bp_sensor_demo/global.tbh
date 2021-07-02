@@ -1,0 +1,55 @@
+'DEFINES-------------------------------------------------------------
+#define DNS_DEBUG_PRINT 1
+#define LUIS_CONFIG_FILE "luis.xtxt"
+#define LUIS_DEBUG_PRINT 1
+#define WLN_AVAILABLE 1
+#define SIGNAL_STRENGTH_INDICATION 1
+#define MQTT_SSL 1
+#define MQTT_CER_FILE "azure.cer"
+#define MQTT_LARGE_PACKETS 1
+#define MQTT_DEBUG_PRINT 1
+
+const MODBUS_MASTER_INTERFACE=0
+const BP_03_DEVICE_ID = 66
+const MODItem_addr = 0
+const peripheral3_PORT_NUM=0
+const SER0_HDFD=5 'EXT_LINE_6 HIGH for full-duplex, LOW for half-duplex
+const SER0_RSMD=6 'EXT_LINE_7 HIGH for RS422/485, LOW for RS232
+const S1_CLK = PL_IO_NUM_5_EXPANDER_SCL
+const S1_DATA = PL_IO_NUM_6_EXPANDER_SDA
+const S1_CHANNEL = 0
+
+const FIRMWARE_VERSION="{WS1102_BP_SENSOR 1.0.0}"
+const MAX_NUM_INTERFACES=4
+const BT_NAME="WS1102_BP_SENSOR"
+const DEVICE_NET_IP = "192.168.1.101"
+const DEVICE_NET_MASK = "255.255.255.0"
+const DEVICE_NET_GATEWAY = "192.168.1.1"
+const FD_INIT_FILE = "DBINIT"
+
+'INCLUDES------------------------------------------------------------
+include "sock\trunk\sock.tbh"
+include "dns\trunk\dns.tbh"
+includepp "settings.xtxt"
+include "settings\trunk\settings.tbh"
+includepp "tables.xtxt"
+include "tables\trunk\tables.tbh"
+include "luis\trunk\luis.tbh"
+includepp "luis.xtxt"
+include "mqtt\trunk\mqtt.tbh"
+include "time\trunk\time.tbh"
+includepp "filenum.xtxt"
+include "filenum\trunk\filenum.tbh"
+includepp "iothub.xtxt"
+include "iothub.tbh"
+include "libraries\modbus.tbh"
+include "ssi\trunk\ssi.tbh"
+include "super_i2c\trunk\super_i2c.tbh"
+'include "libraries\super_i2c.tbh"
+include "libraries\tbt41.tbh"
+
+'DECLARATIONS--------------------------------------------------------
+declare sub BP_03_Light_data_available(registerValue as word)
+declare sub init_io_expander()
+declare sub boot()
+declare function generateSasToken(byref resourceUri as string, byref signingKey as string, expiresInMins as word) as string
