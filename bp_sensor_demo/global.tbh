@@ -11,6 +11,7 @@
 
 const MODBUS_MASTER_INTERFACE=0
 const BP_03_DEVICE_ID = 66
+const BP_02_DEVICE_ID = 1
 const MODItem_addr = 0
 const peripheral3_PORT_NUM=0
 const SER0_HDFD=5 'EXT_LINE_6 HIGH for full-duplex, LOW for half-duplex
@@ -49,7 +50,6 @@ include "super_i2c\trunk\super_i2c.tbh"
 include "libraries\tbt41.tbh"
 
 'DECLARATIONS--------------------------------------------------------
-declare sub BP_03_Light_data_available(registerValue as word)
 declare sub init_io_expander()
 declare sub boot()
 declare function generateSasToken(byref resourceUri as string, byref signingKey as string, expiresInMins as word) as string

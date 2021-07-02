@@ -75,10 +75,15 @@ end sub
 public sub device_proc_timer()
 	if sample_timer>0 then
 		sample_timer=sample_timer-1
-	else
-		modbus_master_request(BP_03_DEVICE_ID, ReadInputRegisters, 500, 1, "", MODBUS_MASTER_INTERFACE, modbus_RTU)
-		sample_timer=SENSOR_SAMPLING_TIME
 	end if 
+	select case sample_timer
+	case 0:
+		modbus_master_request(BP_02_DEVICE_ID, ReadInputRegisters, 400, 1, "", MODBUS_MASTER_INTERFACE, modbus_RTU)
+		sample_timer=SENSOR_SAMPLING_TIME
+	case 1:
+		modbus_master_request(BP_03_DEVICE_ID, ReadInputRegisters, 500, 1, "", MODBUS_MASTER_INTERFACE, modbus_RTU)
+	case else:	
+	end select
 
 	if event_post_timer>0 then
 		event_post_timer=event_post_timer-1
@@ -322,31 +327,28 @@ sub callback_modbus_slave_reply(byref request_item as modbus_request_item, byref
 		case BP_03_DEVICE_ID:
 			
 			if request_item.start_register=500 then
-				dim BP_03_BP_03_Light_val as word = modbus_read_word(bytes,0)
-				BP_03_Light_data_available(BP_03_BP_03_Light_val)
-				
+				dim BP_03_Light_val as word = modbus_read_word(bytes,0)
+				light=str(BP_03_Light_val)
+				tbl_result=tbl_select("events","events")
+				tbl_result=tbl_field_sg("light",light,EN_TBL_SET)
+			end if	
+		case BP_02_DEVICE_ID:
+			if request_item.start_register=400 then
+				dim BP_02_Temperature_val as word = modbus_read_word(bytes,0)
+				temp=str(BP_02_Temperature_val)
+				temp=left(temp,len(temp)-1)+"."+right(temp,1)
+				tbl_result=tbl_field_sg("temp",temp,EN_TBL_SET)
 				rtc.getdata(daycounts,mincounts,seconds)
 				time_to_str(ts,daycounts,mincounts,seconds)
 				ts=ts+".000Z"
-				temp="0"
-				light=str(BP_03_BP_03_Light_val)
-				sys.debugprint(ts+"\x0a"+temp+" C\x0a"+light+"\x0a")	
-				tbl_result=tbl_select("events","events")
 				tbl_result=tbl_field_sg("time",ts,EN_TBL_SET)
-				tbl_result=tbl_field_sg("temp",temp,EN_TBL_SET)
-				tbl_result=tbl_field_sg("light",light,EN_TBL_SET)
-				tbl_result=tbl_record_add("")
+				tbl_result=tbl_record_add("")	
 			end if
-			
+		
 	case else
 	end select
 end sub
-
-sub BP_03_Light_data_available(registerValue as word)
-    sys.debugprint(str(registerValue)+ "\r\n")
-
-end sub
-            
+      
 sub init_io_expander()
     'Tibbit 41 setup on socket 1
     '================================================================
