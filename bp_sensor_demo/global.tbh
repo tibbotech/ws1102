@@ -11,7 +11,7 @@
 
 const MODBUS_MASTER_INTERFACE=0
 const BP_03_DEVICE_ID = 66
-const BP_02_DEVICE_ID = 1
+const BP_02_DEVICE_ID = 65
 const MODItem_addr = 0
 const peripheral3_PORT_NUM=0
 const SER0_HDFD=5 'EXT_LINE_6 HIGH for full-duplex, LOW for half-duplex

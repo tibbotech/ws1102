@@ -123,10 +123,11 @@ end sub
 sub callback_mqtt_connect_ok()
 	iothub_on_connected()
 	event_post_timer=1
+	pat.play("G-~",PL_PAT_CANINT)
 end sub
 
 sub callback_mqtt_connect_lost()
-
+	pat.play("R-~",PL_PAT_CANINT)
 	iothub_on_disconnected()
 end sub
 
@@ -329,6 +330,7 @@ sub callback_modbus_slave_reply(byref request_item as modbus_request_item, byref
 			if request_item.start_register=500 then
 				dim BP_03_Light_val as word = modbus_read_word(bytes,0)
 				light=str(BP_03_Light_val)
+				sys.debugprint(light+" lux \n")
 				tbl_result=tbl_select("events","events")
 				tbl_result=tbl_field_sg("light",light,EN_TBL_SET)
 			end if	
@@ -337,6 +339,7 @@ sub callback_modbus_slave_reply(byref request_item as modbus_request_item, byref
 				dim BP_02_Temperature_val as word = modbus_read_word(bytes,0)
 				temp=str(BP_02_Temperature_val)
 				temp=left(temp,len(temp)-1)+"."+right(temp,1)
+				sys.debugprint(temp+" C\n")
 				tbl_result=tbl_field_sg("temp",temp,EN_TBL_SET)
 				rtc.getdata(daycounts,mincounts,seconds)
 				time_to_str(ts,daycounts,mincounts,seconds)
